@@ -1,0 +1,318 @@
+---
+title: "Analysis of F1 scores"
+author: 
+  - Roeland E. Voorrips
+  - Alejandro Therese Navarro
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analysis of F1 scores}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 100)
+```
+
+The package `fitPoly` includes several helper functions to input data
+from different SNP array providers as well as utilities to analyse the
+quality of genotype scores obtained by the main model of `fitPoly`. This
+vignette shows how to use the second set of functions and explains their
+output; another vignette deals with the [data import and
+preparation](Data_import_and_preparation.html). The package offers more
+functions than shown here, and the functions we use have additional
+parameters; check the help for extra information.
+
+In this vignette we will take the output of fitPoly for one Full-Sib
+family and its parents, and analyze it:
+
+-   Initial determination of the segregation types of all markers and
+    quality checks (exercise 1)
+-   Check for possibly "shifted" markers, correct the shifts and
+    re-determine their segregation type and quality scores (exercise 2)
+-   Selection of reliable, well-scored SNPs (exercise 3)
+-   Combination of the results of two different assays for the same SNP
+    and export a file that has the dosage scores for the parents and FS
+    individuals (exercise 4)
+
+Load the package and the scores data.frame produced by fitPoly:
+
+```{r}
+library(fitPoly)
+data(scores)
+```
+
+## Exercise 1: Segregation types and quality
+
+Function `saveMarkerModels` in package `fitPoly` returns (a.o.) a file
+with dosage scores for all markers where a model could be fitted. These
+`data` are in data.frame scores. , of which we show a part:
+
+```{r echo=FALSE}
+df <- scores[scores$marker==5,]
+for (col in c(4:9,11)) df[,col] <- round(df[,col],3)
+head(df)
+```
+
+Columns P0 ... P4 show the probabilities that the dosage is nulliplex
+... quadruplex. The last column, geno, is the dosage assigned; it is NA
+if the probability of the most probable dosage is less than 0.99 (the
+threshold used in the `fitPoly` analysis in this case). In the first
+part of this vignette we will only use the geno values, but at some
+point the P-values will also be considered.
+
+The initial check for segregation type is carried out by function
+`checkF1`:
+
+```{r}
+# specify parental and F1 samples:
+par1 <- "P540a1"
+par2 <- c("P867a1","P867a2","P867b")
+F1 <- levels(scores$SampleName)[substr(levels(scores$SampleName),1,1)=="K"]
+chk1 <- checkF1(scores, par1, par2, F1,
+                polysomic=TRUE, disomic=TRUE, mixed=FALSE, 
+                ploidy=4, outfile=NA)
+#some parts of the result:
+knitr::kable(chk1[1:4,1:14])
+knitr::kable(chk1[1:4,c(1:2, 19:22, 26)])
+```
+
+This is a rose (*Rosa x hybrida)* dataset and we expect that both
+polysomic and disomic inheritance may occur. By setting both
+corresponding parameters to TRUE we consider both sets of segregation
+types. The result is a data.frame with one row for each marker. The
+first columns list the marker name, the inferred parental dosages, the
+observed F1 segregation and the observed parental sample dosages. The
+`bestParentfit` column lists the selected segregation type and the next
+3 columns list 3 parameters describing how well this segregation fits
+with the observations. The `qall_mult` column is an overall quality
+assessment, from poor (0) to perfect (1). There are more columns in
+`chk1`, and with other parameter settings even more columns will be
+produced; for a full explanation refer to the help. For this demo we set
+`outfile` to NA, but we could also have specified a filename. In that
+case a tab-separated text file would be saved which can be imported into
+Excel for easy viewing.
+
+The segregation codes need some explanation. They consist of 2 parts:
+the first part has the segregation ratios (e.g. 11 means 1:1, 141 means
+1:4:1 and so on; a single 1 means no segregation, all F1 have the same
+dosage). An underscore separates the two parts and the second part is a
+single number specifying the lowest dosage occurring in the segregation.
+For example: 121_0 means 1 nulliplex : 2 simplex : 2 duplex; 11_3 means
+1 triplex : 1 quadruplex. There is one tetrasomic segregation type
+1:8:18:8:1 where one of the ratios is larger than 9 and cannot be
+represented by a digit; in this and similar cases we use letters A-Z to
+represent ratios 10-35, so this segregation is represented as 18I81_0,
+with the I meaning 18. For higher ploidy levels this system is extended,
+see the help for a full explanation.
+
+## Exercise 2: checking for "shifted" markers
+
+When not all dosages are present among the samples it is possible that
+`fitPoly` assigns the peaks in the signal ratio histogram to the wrong
+dosages. For example, if parents in reality have dosages 0 and 1, also
+the F1 progeny will (almost) only have dosages 0 or 1. If no other
+samples are analyzed, only two of the five dosages are present, and
+these might be mis-interpreted as beings dosages 1 and 2 instead of 0
+and 1. These mis-assignments are called "shifts". fitPoly checks against
+such possible shifts whether or not parents and F1 populations are
+defined but it doesn't catch them all.
+
+The function `correctDosages` is provided that based on the result of
+checkF1 checks if shifting the dosages up or down by 1 would be worth to
+try. The result is a set of suggested shifts, that should then again
+(using checkF1) be checked for their actual fit.
+
+```{r}
+cordos <- correctDosages(chk1, scores, par1, par2, ploidy=4,
+                        polysomic=TRUE, disomic=TRUE, mixed=FALSE)
+# show the nonzero shifts:
+cordos[cordos$shift!=0,]
+```
+
+The column `shift` contains the suggested shifts to try: a 0 means no
+shift suggested, a 1 means: shift all dosages assigned by fitPoly up (0
+becomes 1, 1 becomes 2, 2 becomes 3, 3 and 4 become 4 (3 and 4 are
+merged)). A shift of -1 means that all dosages should be decreased by 1
+(merging previous dosages 0 and 1 into dosage 0). Note that this is a
+rather simplistic way to check for possibly shifted markers. If there
+are more samples available than only the F1 population and its parents,
+those might also be informative about possible shifts. Also, sometimes
+both the unshifted and the shifted version of the marker might be
+acceptable. In such cases it may be useful to keep both versions and
+decide later on (after mapping or haplotyping steps) which version fits
+best.
+
+The next step is to run `checkF1` again with as additional parameter
+these shifts; it will then perform the indicated dosage shift on all
+samples (parental and F1) before selecting the most likely segregation
+type and quality assessment:
+
+```{r}
+#select the markers where a shift should be tried:
+cordos <- cordos[cordos$shift != 0,] 
+subscores <- scores[scores$MarkerName %in% as.character(cordos$MarkerName),]
+chk2 <- checkF1(subscores, par1, par2, F1,
+                polysomic=TRUE, disomic=TRUE, mixed=FALSE, 
+                ploidy=4, outfile=NA, shiftmarkers=cordos)
+```
+
+Data.frame `chk2` has the same format as ck1 but has an additional
+column "shift" at the end. For the next steps it is useful to merge
+`chk1` and `chk2`. In order to do that, chk1 needs also to get this
+extra column:
+
+```{r}
+chk1$shift <- 0
+chk <- rbind(chk1, chk2)
+chk <- chk[order(chk$MarkerName),]
+```
+
+## Exercise 3: select acceptably scored markers
+
+The data.frame `chk` now has all unshifted and shifted versions of the
+markers. Each of the (versions of the) markers has been checked for its
+quality, which is (a.o.) expressed in its value of qall_mult. We would
+like to select only those (versions of) markers that are of sufficient
+quality. As a rule of thumb, all scores of markers with qall_mult==0 are
+bad and all others might be acceptable, but perhaps we can raise the
+threshold for qall_mult a bit for a more stringent selection, without
+losing valuable markers. The approach is to study XY-scatterplots for
+several markers at different levels of qall_mult and see from which
+level good (well-scored) markers appear. This approach is similar to
+that used to exclude markers based on total signal intensity, as
+discussed in the vignette on data import and preparation. In order to
+produce scatterplots with dots colored according to assigned dosages we
+first combine the X and Y signals with the geno (dosage) values.
+
+```{r eval=FALSE}
+data("XYdat") 
+XYgeno <- combineFiles(XYdata=XYdat, scores=scores)
+# define qall levels of 0, 0.05, 0.10 up to 1 where we want to inspect some SNPs:
+qall.levels <- seq(0, 1, by=0.05)
+# select six SNPs with qall values near each of these values and draw their plots:
+chkx <- selMarkers_qall(chk,  qall.levels, mrkperlevel=6)
+drawXYplots(dat=XYgeno, markers=chkx,
+            out="your-path-and filename",
+            genocol=get.genocol(ploidy=4), sample.groups=list(par1, par2),
+            groups.col=c("red", "blue"), ploidy=4)
+```
+
+This generates a series of pages, each with 6 plots; here is part of one
+such page: ![Part of a page generated by
+drawXYplots](check_qall_levels_DO_NOT_DELETE.png)
+
+The `drawXYplots` command here is quite complex. A full explanation of
+all parameters can be found in the help. Some things to note here:
+`genocol` sets the (pastel) colors assigned to each of the dosages, from
+red (nulliplex) through blue (duplex) to green (quadruplex), and grey
+for samples with missing dosage score. The parents are highlighted in
+red and blue via parameters sample.groups and groups.col. The two plots
+show a duplex x duplex (1:8:18:8:1) and a simplex x simplex (1:2:1)
+marker. A conclusion from this series of plots is that already at
+qall_mult==0.05 most of the markers appear to be well-scored. A next
+step could be to try to find a qall_mult threshold between 0 and 0.05 to
+separate the well-scored and badly scored markers; we leave that for the
+reader and for now we will accept all marker (versions) with qall \> 0,
+and save them to a dosage file:
+
+```{r}
+#select only the markers with qall_mult > 0:
+chk <- chk[!is.na(chk$qall_mult) & chk$qall_mult > 0,]
+#write the dosage file, applying the shifts as listed in chk:
+dosages <- writeDosagefile(chk, scores, par1, par2, F1,
+                           polysomic=TRUE, disomic=TRUE, mixed=FALSE,
+                           ploidy=4, scorefile=NA)
+knitr::kable(dosages[10:14, 1:12])
+```
+
+Normally we would specify a filename for `scorefile`, to get the results
+also as a tab-separated text file. The dosages data.frame (and file)
+list the marker, segregation type, the scores of the parental samples,
+the consensus/inferred parental dosages and the dosages of the F1
+individuals. If `chk` contains a column "shift", as here, the shift is
+applied to the dosages as listed in the score data.frame. In that case
+also an `n` or `s` is appended to the `MarkerNames` to indicate they
+were not shifted (shift==0) or shifted (shift!=0); in this way we avoid
+having duplicated markers if both the nonshifted and the shifted version
+passed the quality filter.
+
+Here we see that the two probes (P and Q) of marker RhK5_101_3700 were
+initially scored with a difference of 1 in the dosages (versions Pn vs
+Qn, where n means non-shifted). Function `correctDosages` found that the
+P probe should possibly be shifted and this resulted in version Ps (s
+for shifted). Versions Ps and Qn generally have the same scores, and
+both fit segregation type 11_0 (1:1 nulliplex:simplex). Similar for the
+non-shifted and shifted versions of probe P of marker RhK5_10102_270;
+for that marker the Q probe was rejected.
+
+## Exercise 4: combine probes
+
+The Affymetrix Axiom array needs only one probe to detect a SNP. This
+means that the same SNP can be detected by two different probes,
+flanking the SNP on either side. If both probes are present on the array
+they are initially treated as two separate markers by the array software
+and `fitPoly`. If all is well the two probes should produce the same
+results (since they detect the same SNP) but due to various factors a
+probe may fail entirely or for a subset of the samples. Results that are
+identical between the probes validate each other, and missing values
+from one probe might be filled in by the other. Also, `fitPoly` might
+produce shifted dosages for one or both probes and a comparison might
+help to decide the correct version.
+
+In order to compare the results of both probes we use function
+`compareProbes`. This function assumes that the `MarkerNames` of the two
+probes for the same SNP are identical except for a short suffix; by
+default (and in the example) these suffixes are P and Q.
+
+```{r}
+cpp <- compareProbes(chk, scores, parent1=par1, parent2=par2, F1=F1,
+                     polysomic=TRUE, disomic=TRUE, mixed=FALSE,
+                     ploidy=4, compfile=NA, combscorefile=NA)
+knitr::kable(head(cpp$compstat))
+knitr::kable(cpp$combscores[1:4, 1:12])
+
+```
+
+`compareProbes` returns a list with two components `compstat` and
+`combscores`, each a data.frame. These are also saved as tab-separated
+text files if `compfile` and `combscorefile` are specified. Data.frame
+`compstat` has an overview of the different versions of each SNP (two
+probes, each unshifted and/or shifted). For each of these (suffixed with
+P or Q for the probe and n or s for (non-)shifted) the segregation type
+and `qall_mult` quality score is listed. If (a version of) the P and the
+Q probe are sufficiently similar, a combined version of the SNP is
+produced which gets the suffix R, and a further suffix `nn`, `ns`, `sn`
+or `ss` depending on whether the nonshifted or the shifted version of
+the P and Q probe was used for merging. Also for such a merged (R)
+marker the segregation type is given, and finally the number of versions
+of the P, Q and R markers. Two probes are considered sufficiently
+similar to merge if they have the same segregation type and if there are
+(by default) not more than 4% conflicting sample scores. For more
+details and additional parameters see the help.
+
+The other component of the `compareProbes` result is data.frame
+`combscores`. This lists the segregation type and dosages for all
+markers (the original P and Q markers and the combined R markers) in the
+same format as produced by `writeDosagefile` (exercise 3). In the second
+table we can see that there is redundancy: for the first SNP the P, Q
+and R markers are all present, but they are almost completely identical
+(as expected, since a combined marker is produced). If we are happy to
+accept the merging we need to remove the P and Q marker data if an R
+marker is present. This is done by function removeRedundant:
+
+```{r}
+rr <- removeRedundant(compstat=cpp$compstat, combscores=cpp$combscores,
+                      compfile=NA, combscorefile=NA)
+knitr::kable(rr$combscores[1:4, 1:12])
+
+```
+
+`removeRedundant` produces the same type of output as `compareProbes`.
+The `compstat` data.frame is not very interesting but the combined
+scores in data.frame `rr$combscores` are the result that we will want to
+use in mapping studies and further genetic analyses.

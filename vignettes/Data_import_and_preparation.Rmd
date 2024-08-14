@@ -1,0 +1,284 @@
+---
+title: "Data import and preparation"
+author: 
+  - Roeland E. Voorrips
+  - Alejandro Therese Navarro
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Data import and preparation}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r set-options, echo=FALSE, cache=FALSE}
+options(width = 100)
+```
+
+FitPoly contains several functions to import from SNP array software,
+perform selections based on signal intensity and prepare input data for
+genotyping. The package offers more functions than shown here, and the
+functions we use have additional parameters; check the help for extra
+information.
+
+Load the package and set the working directory to the data directory:
+
+```{r}
+library(fitPoly)
+```
+
+## Exercise 1: extract data from SNP array
+
+We cover here the cases for Illumina Infinium and GoldenGate arrays and
+for Affymetrix Axiom arrays. The aim of this step is to get the data
+into a uniform format, such that the further steps are not dependent on
+the source of the data (array platform).
+
+### Illumina
+
+The data from Illumina arrays are processed with Illumina's GenomeStudio
+software. This software can export a `Full Data Table.txt` file, which
+is a tab-separated text file (i.e. columns in this file are separated by
+Tab stops). In this file format every row corresponds to a marker. The
+first columns contain general data for the marker including its name;
+next for each sample there are a few columns. For our purposes we need
+the columns X and Y for each sample. These are not exported by default;
+in order to export them, within GenomeStudio we use the Column Chooser
+button to include them in the output. All other sample columns besides X
+and Y are not needed but are tolerated; however since they increase the
+file size and memory load it is better to omit them when exporting from
+GenomeStudio.
+
+```{r}
+# show part of a GenomeStudio FullDataTable file (only some relevant columns):
+fname <- system.file("extdata", "FullDataTable.txt", package="fitPoly")
+dat <- readDatfile(fname, check.names=FALSE)
+dat[1:3, c(2, 15,16, 21,22, 27,28)]
+```
+
+In case you want to see the `FullDataTable.txt` file itself, you can
+find it in the extdata subdirectory of the main package directory.
+
+### Affymetrix
+
+The data from Affymetrix Axiom arrays are processed with the Affymetrix
+Power Tools (APT) or the Genotyping Console software. After initial
+quality control steps all passing samples and all SNPs are processed by
+the program "apt probeset genotype". If the option --summaries is
+included (as is normally the case) a file `AxiomGT1.summary.txt` file is
+produced. Like the GenomeStudio file, this is a tab-separated text file
+with the markers in rows and the samples in columns. There are also
+differences; most importantly, instead of having columns X and Y for
+each sample, we now have one column per sample but rows A and B for each
+marker. Also the files start with several hundred lines of text, and the
+last few thousand rows contain quality control (DQC) markers. Also the
+sample names all have ".CEL" appended to them.
+
+```{r}
+# show part of an Affymetrix AxiomGT1.summary.txt file:
+fname <- system.file("extdata", "AxiomGT1.summary.txt", package="fitPoly")
+dat <- readDatfile(fname, comment.char="#", check.names=FALSE)
+dat[1:6, 1:4]
+```
+
+Again, the `AxiomGT1.summary.txt` file is located in the extdata
+subdirectory of the main package directory.
+
+### Read and convert the array data
+
+We provide demo files, each with only 10 or 15 samples and 10 SNP
+markers. We will import these files, clean the sample names and convert
+them from **wide** format (all samples side by side) to **long** format
+(all samples under each other, with columns `MarkerName`, `SampleName`,
+`X`, `Y`, `R`, `ratio`).
+
+```{r}
+# import a FullDataTable.txt file from GenomeStudio:
+fname <- system.file("extdata", "FullDataTable.txt", package="fitPoly")
+datGS <- readFullDataTable(filename=fname, out="")
+head(datGS)
+unique(datGS$MarkerName)
+unique(datGS$SampleName)
+
+# import an AxiomGT1.summary.txt file from Affymetrix Power Tools:
+fname <- system.file("extdata", "AxiomGT1.summary.txt", package="fitPoly")
+datAX <- readAxiomSummary(AXdata=fname, out="")
+head(datAX)
+unique(datAX$MarkerName)
+unique(datAX$SampleName)
+```
+
+These functions return the reformatted data as a data.frame. Normally
+you would use the parameter `out` to specify the name of an RData file
+(or optionally a tab-separated text file, see the help) to save the
+converted data.
+
+## Exercise 2: Rename the samples and separate by ploidy level
+
+Normally the marker names and/or the sample names as used in the array
+software are different from the original names. In these cases there
+should be a file specifying the translation between the two sets of
+names. Such a file can also contain additional information on the
+samples, such as the categories of the samples (e.g. F1 parent 1, F1
+parent 2, F1 individual, association panel, wild, control) and ploidy
+(e.g. 2x, 4x). In this exercise we will convert the marker and sample
+names of the `datAX` data.frame and split it into two parts: one for the
+tetraploid and one for the diploid samples.
+
+First we rename the markers. The translation is specified by file
+`CsvAnnotationFile.v1.txt`. Since the markers on the array are a fixed
+set these annotation files don't change and can usually be assumed to be
+correct (i.e. all marker names in the array can be assumed also to occur
+in the annotation file and v.v., and all `customer_id` codes can be
+assumed to be unique). Therefore we don't need to check this and can
+perform the translation directly:
+
+```{r}
+fname <- system.file("extdata", "CsvAnnotationFile.v1.txt", package="fitPoly")
+mrktable <- read.csv(fname, comment.char="#")
+levels(datAX$MarkerName) <- 
+  mrktable$customer_id[match(levels(datAX$MarkerName), mrktable$Probe.Set.ID)]
+```
+
+Next we rename the samples. The samples are different between projects
+using the same array, and sample annotations are usually made by hand,
+in different formats, and cannot be assumed to be error-free. Also it
+may be that there are samples of various ploidy levels, which we may
+want to split into separate sets. For this we use function
+`splitNrenameSamples`:
+
+```{r}
+fname <- system.file("extdata", "AX_sampletable.csv", package="fitPoly")
+smptable <- read.csv(fname)
+head(smptable)
+# no split, return the original data.frame with substituted SampleNames:
+datAX_unsplit <- splitNrenameSamples(dat=datAX, sampletable=smptable,
+                                     SampleID="BestArray", CustomerID="SampleName",
+                                     out=NA)
+head(datAX_unsplit) 
+# split samples based on ploidy, return a list of data.frames:
+datAX_split <- splitNrenameSamples(dat=datAX, sampletable=smptable,
+                                   SampleID="BestArray", CustomerID="SampleName",
+                                   Ploidy="Ploidy", out=NA)
+head(datAX_split[[1]])
+head(datAX_split[[2]])
+```
+
+Although we use `out=NA` in this demo, normally you would provide a
+filename to store the results.
+
+## Exercise 3: Filtering the data based on total signal intensity
+
+The total signal intensity R = X + Y can be used as a measure whether
+sample DNA is ok, the marker is designed well, and individual datapoints
+are acceptable. Selection of data based on signal intensity has to be
+done before dosage calling by fitPoly as fitPoly only works with the
+signal ratio, not with absolute signal intensities. For this exercise we
+will use an example data.frame `XYdat` .
+
+```{r}
+data(XYdat)
+head(XYdat)
+```
+
+### 3a: Selection of samples based on total signal intensity
+
+Samples with bad DNA quality may be recognized by a low R (total signal
+intensity), averaged over all markers. This information is saved in a
+file produced by `readFullDataTable` or `readAxiomSummary` if parameter
+out is specified. However it is also quite easy to calculate directly if
+all data are in the same data.frame:
+
+```{r}
+sampRmean <- tapply(XYdat$R, XYdat$SampleName, mean)
+hist(sampRmean, breaks = 20)
+```
+
+It is clear that the mean R values for all samples are quite similar so
+there is no reason to exclude any samples at this point.
+
+### 3b: Selection of markers based on total signal intensity
+
+Next we will check if any markers should be excluded based on their
+overall signal intensity R. We calculate a number of statistics of the R
+distribution per marker and study the 95% quantiles (q95) of the
+markers:
+
+```{r}
+Rstats <- calcRstats(XYdat, out=NA)
+quantile(Rstats$q95)
+```
+
+In contrast to the samples, the markers vary widely in signal intensity.
+Probably there is a level below which no usable markers occur. We define
+a number of levels for q95 and at each level we select 3 markers. We
+then draw XY-scatterplots for these markers and decide from which level
+clear clustering pattern occur:
+
+```{r eval=FALSE}
+Rlevels <- seq(200, 6000, by=400)
+sel.Rstats <- selMarkers_byR(Rstats, Rlevels, mrkperlevel=3)
+drawXYplots(dat=XYdat, markers=sel.Rstats,
+            out="your-path-and filename", drawRthresholds=TRUE)
+```
+
+This generates a series of pages, each with 6 plots; here is part of one
+such page: ![Part of a page generated by
+drawXYplots](check_R_levels_DO_NOT_DELETE.png)
+
+These two markers show more or less clear clusters and have a q95 around
+1600, so clearly the threshold below which markers should be excluded
+must be lower than 1600. In this case we will exclude all markers with
+q95 \< 1400. This selection will be combined with a within-marker
+selection of samples in function `makeFitPolyFiles` (see next exercise),
+but if no within-marker selection is needed it can also be done as shown
+here:
+
+```{r}
+keep <- Rstats$MarkerName[Rstats$q95 >= 1400]
+dat <- XYdat[XYdat$MarkerName %in% keep,]
+```
+
+### 3c: Selection based on R values of samples within markers
+
+In the plots as shown above the diagonal line represents R = 0.5 \* q95.
+Different, and even multiple, R threshold lines can be drawn by using
+the `Rthreshold.param` paprameter of `drawXYplots` (see the help). By
+looking at a series of XY-plots we can decide if we want to exclude
+samples with R \< 0.5 \* q95 (or any other threshold). Note that the
+within-marker threshold should be based on the q95 (or another R
+statistic) of each marker, as the signal intensity differs a lot between
+markers. The following selects all markers where q95 (the 95% quantile
+of R) is \>= 1400, and within these markers it assigns a missing value
+(NA) to all markers where R \< 0.5 \* q95:
+
+```{r}
+dat.sel <- makeFitPolyFiles(XYdat, out=NA, Rquantile=0.95, marker.threshold=1400,
+                            Rthreshold.param=c(0.95, 0.5, 0))
+#dat.sel is in this case a list with only one useful element (the other element
+#is NA); simplify:
+dat.sel <- dat.sel[[1]]
+head(dat.sel)
+```
+
+For more information on `makeFitPoly` files see the help.
+
+## Excersise 4: run fitPoly
+
+This vignette is about preparing and selecting data for dosage scoring
+by using the function `saveMarkerModels`. We assume that data.frame
+`dat.sel` from the previous exercise is still in memory.
+
+```{r eval=FALSE}
+saveMarkerModels(ploidy=4, markers=1:3, data=dat.sel, filePrefix="A", rdaFiles=TRUE)
+```
+
+The main result of this function call is a file `A_scores.RData` which
+contains a data.frame with for each marker (in this case only the first
+3 markers) and sample the assigned dosage, as well as some further data.
+For further information on the input and output of fitPoly functions see
+the vignette [Segregation analysis of dosage
+scores](Segregation_analysis_of_dosage_scores.html) in this package.
