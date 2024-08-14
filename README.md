@@ -1,6 +1,6 @@
 # FitPoly: Genotype Calling for Bi-Allelic Marker Assays
 
-FitPoly is able to genotype polyploid bi-allelic markers using signal intensities from SNP arrays. 'fitPoly' assigns genotypes (allele dosages) to a collection of polyploid samples based on these signal intensities. 'fitPoly' replaces the older package 'fitTetra' that was limited to only tetraploid populations whereas 'fitPoly' accepts any ploidy level.
+FitPoly is able to genotype polyploid bi-allelic markers using signal intensities from SNP arrays. 'fitPoly' assigns genotypes (allele dosages) to a collection of polyploid samples based on these signal intensities. 'fitPoly' replaces the older package 'fitTetra' that was limited to only tetraploid populations whereas 'fitPoly' accepts any ploidy level. Version 4.0.0 onwards also include all functionalities that were added in the R fitPolyTools.
 
 Additional functionalities have been added to fitPoly since the development of fitTetra:
 
@@ -14,4 +14,4 @@ Additional functionalities have been added to fitPoly since the development of f
 
 -   Other utiliy functions that can be found in the vignettes.
 
-FitTetra reference: [Genotype calling in tetraploid species from bi-allelic marker data using mixture models. Voorrips RE, Gort G, Vosman B (2011)](<http://dx.doi.org/10.1186/1471-2105-12-172>).
+FitTetra reference: [Genotype calling in tetraploid species from bi-allelic marker data using mixture models. Voorrips RE, Gort G, Vosman B (2011)](http://dx.doi.org/10.1186/1471-2105-12-172).
