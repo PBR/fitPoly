@@ -178,13 +178,13 @@ readFullDataTable <- function(filename, rawXY=FALSE,
   #instead of the filename, because we need to decide which columns to read
 
   #test input:
-  if (class(markergroups) != "list") {
+  if (!is.list(markergroups)) {
     stop("markergroups is not list")
   }
   if (missing(out)) stop("error in readFullDataTable: out must be specified")
   if (length(out) != 1) stop("out must be one filename or NA")
   if (!is.na(out)) {
-    if (class(out) != "character") {
+    if (!is.character(out)) {
       stop("out must be one filename")
     }
     if (is.na(out) || out == "") {
@@ -414,13 +414,13 @@ readAxiomSummary <- function(AXdata,
                              out,
                              filetype=c("dat", "RData")[2]) {
   #test input:
-  if (class(markergroups) != "list") {
+  if (!is.list(markergroups)) {
     stop("markergroups is not list")
   }
   if (missing(out)) stop("out must be specified")
   if (length(out) != 1) stop("out must be one filename or NA")
   if (!is.na(out)) {
-    if (class(out) != "character") {
+    if (!is.character(out)) {
       stop("out must be one filename")
     }
     if (is.na(out) || out == "") {
@@ -774,7 +774,7 @@ splitNrenameSamples <- function(dat, sampletable,
   if (missing(out)) stop("out must be specified")
   if (length(out) != 1) stop("out must be one filename or NA")
   if (!is.na(out)) {
-    if (class(out) != "character") {
+    if (!is.character(out)) {
       stop("out must be one filename")
     }
     if (is.na(out) || out == "") {
@@ -1124,7 +1124,7 @@ XY_plot <- function(title="", #the main title above the plot
     points(XYsub$Y ~ XYsub$X,
            col=genocol[XYsub$geno + 1], pch=pch, cex=cex)
     #next, draw the groups of samples
-    if (class(sample.groups) == "list" &&
+    if (is.list(sample.groups) &&
         length(sample.groups) > 0) {
       groups.col <- rep(groups.col, length.out=length(sample.groups))
       groups.pch <- rep(groups.pch, length.out=length(sample.groups))
@@ -3361,9 +3361,9 @@ compareProbes <- function(chk,
     stop(paste(funcname,
                ": chk should have one column segtype or bestParentfit",
                sep=""))
-  if (class(chk[, segtypecol]) != "character")
+  if (!is.character(chk[, segtypecol]) )
     chk[, segtypecol] <- as.character(chk[, segtypecol])
-  if (class(chk$MarkerName) != "character")
+  if (!is.character(chk$MarkerName))
     chk$MarkerName <- as.character(chk$MarkerName)
   #delete all rows without a segtype (mostly those that are not fitted by fitPoly):
   chk <- chk[!is.na(chk[, segtypecol]) & chk[, segtypecol] != "",]

@@ -950,7 +950,7 @@ savedata <- function(data, filename, append=FALSE) {
                 ": append not supported for RData files", sep=""))
     } else {
       pars <- as.list(match.call())
-      if (class(pars[[2]]) == "name") {
+      if (is.name(pars[[2]])) {
         #savedata was called with data=<object name>;
         #first we create a local object with that name:
         command <- paste(as.character(pars[[2]]), "<- data")
@@ -984,7 +984,7 @@ savedata <- function(data, filename, append=FALSE) {
 
 checkInputData <- function(data) {
   pars <- as.list(match.call()) #parameters of call to this function
-  if (class(pars[[2]]) != "name")
+  if (! is.name(pars[[2]]))
     #should never occur!
     stop("checkInputData may only be called with a named argument")
   if (!is.data.frame(data) ||
@@ -1001,12 +1001,12 @@ checkInputData <- function(data) {
 
 checkSelect <- function(select, data) {
   pars <- as.list(match.call()) #parameters of call to this function
-  if (class(pars[[2]]) != "name")
+  if (!is.name(pars[[2]]))
     #should never occur!
     stop("checkSelect may only be called with a named argument")
   if (any(is.na(select)))
     stop(paste(as.character(pars[[2]]), "may not contain NA values"))
-  if (class(select) != "logical") {
+  if (!is.logical(select)) {
     if (!all(select %in% 0:1)) {
       stop(paste(as.character(pars[[2]]), "must be a logical vector"))
     } else select <- as.logical(select)
