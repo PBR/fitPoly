@@ -2,9 +2,9 @@
 #
 #    fitPoly is the successor of fitTetra. It is an R package for assigning
 #    polyploid genotype scores for bi-allelic marker assays.
-#    (C) 2010-2018 Roeland E. Voorrips and Gerrit Gort
+#    (C) 2010-2024 Roeland E. Voorrips, Gerrit Gort, Alejandro Therese Navarro
 #    Wageningen University and Research
-#    Version 3.0, March 2018
+#    Version 4.0, August 2024
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -21,9 +21,9 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #    or obtain one at http://www.gnu.org
 #
-#    contact:
-#    e-mail: roeland.voorrips@wur.nl
-#    address: R.E. Voorrips
+#    contact: Alejandro Therese Navarro
+#    e-mail: alejandro.theresenavarro@wur.nl
+#    address: A. Therese Navarro
 #             Wageningen University and Research - Plant Breeding
 #             P.O. Box 16
 #             6700 AA Wageningen
@@ -32,26 +32,16 @@
 # ******************************************************************************
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# WARNING:
-# The Windows 32-bit version of R2.12.0 and possibly 2.11.x and 2.10.x
-# (but not 2.9.x) had a bug in the nls function that causes fitTetra to "hang"
-# occasionally.
-# The first patch to solve the problem was
-# R version 2.12.0 Patched (2010-11-01 r53513)
-# This problem did not occur in the Windows 64-bit and Linux versions.
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # There is a problem in RStudio (Version 0.99.902) when using
 # Build - Check Package:
 # When testing the examples it generates an error saying
 # "There is no package called ...".
 # A workaround is to first Build a source package, install it, and then
 # run Build - Check package
-# Another problem is that RStudio opens the DESCRIPTION file in mode "wb" but
-# does not release it. Therefore after a succesful Check (even if errors are
-# found) the next Check will abort saying that the DESCRIPTION file does not
-# exist. Workaround: just run Check again, next time it works.
+# Another similar issue is found if the address of the package is too long,
+# int that case devtools::check() does not correctly identify the package. 
+# The solution is to just move the package to a directory closer to the base 
+# for example C:/temp in windows, and then check the package.
 # Packages required for building, checking and testing:
 # roxygen2, devtools, testthat
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -125,7 +115,7 @@ utils::globalVariables(names=c("batch", "batdat", "batchlog",
 NULL
 
 
-# saveMarkerModels **************************************************
+# fitMarkers **************************************************
 # This is a user function that calls fitOneMarker for a series of markers
 # and saves the tabular and log output to files.
 # *******************************************************************
@@ -154,7 +144,7 @@ getBatchsize <- function(mrkcount, ncores) {
 #'files. Most of the arguments are identical to those of fitOneMarker and
 #'are directly passed through.
 #'
-#'@usage saveMarkerModels(ploidy, markers=NA, data, diplo=NULL, select=TRUE,
+#'@usage fitMarkers(ploidy, markers=NA, data, diplo=NULL, select=TRUE,
 #'diploselect=TRUE, pop.parents=NULL, population=NULL, parentalPriors=NULL,
 #'samplePriors=NULL, startmeans=NULL, maxiter=40, maxn.bin=200, nbin=200,
 #'sd.threshold=0.1, p.threshold=0.99, call.threshold=0.6, peak.threshold=0.85,
@@ -228,7 +218,7 @@ getBatchsize <- function(mrkcount, ncores) {
 #'default 0.1. If the optimal model has a larger standard deviation the marker
 #'is rejected. Set to a large value (e.g. 1) to disable this filter.
 #'@param p.threshold The minimum P-value required to assign a genotype (dosage)
-#'to a sample; default 0.99. If the P-value for all possible genotypes is less
+#'to a sample; default 0.9. If the P-value for all possible genotypes is less
 #'than p.threshold the sample is assigned genotype NA. Set to 1 to disable
 #'this filter.
 #'@param call.threshold The minimum fraction of samples to have genotypes
@@ -259,7 +249,7 @@ getBatchsize <- function(mrkcount, ncores) {
 #'@param filePrefix partial file name, possibly including an absolute or
 #'relative file path. filePrefix must always be specified.
 #'All output files will have filePrefix prefixed to their name so it is clear
-#'they are all derived from the same call to saveMarkerModels.
+#'they are all derived from the same call to fitMarkers.
 #'If filePrefix includes a file path all output files
 #'will be saved there; if a filePrefix is specified that does not include a
 #'a path the output will be saved in the working directory.
@@ -287,10 +277,10 @@ getBatchsize <- function(mrkcount, ncores) {
 #'under Windows memory size is a problem it would be better to run several
 #'R instances simultaneously, each with ncores=1, each processing part of the
 #'data.
-#'@return NULL. The result of saveMarkerModels is a set of output files.
-#'@details saveMarkerModels calls fitOneMarker for all markers specified by
+#'@return NULL. The result of fitMarkers is a set of output files.
+#'@details fitMarkers calls fitOneMarker for all markers specified by
 #'parameter markers. The markers are processed in batches; the number of markers
-#'per batch is printed to the console when saveMarkerModels is started. If
+#'per batch is printed to the console when fitMarkers is started. If
 #'multiple cores are used the batches are processed in parallel.\cr
 #'During the processing a series of RData files (2 for each batch) is saved in the
 #'directory specified in filePrefix. At the end these are combined into the required
@@ -331,14 +321,14 @@ getBatchsize <- function(mrkcount, ncores) {
 #'  data(fitPoly_data)
 #'
 #'  # tetraploid, with no populations and with sample prior dosages
-#'  saveMarkerModels(ploidy=4, data=fitPoly_data$ploidy4$dat4x,
+#'  fitMarkers(ploidy=4, data=fitPoly_data$ploidy4$dat4x,
 #'                   samplePriors=fitPoly_data$ploidy4$sampPriors4x,
 #'                   filePrefix=paste0(tempdir(),"/4xA"),
 #'                   allModelsFile=TRUE,
 #'                   plot="fitted")
 #'
 #'  # tetraploid, with specified populations and parental and sample prior dosages
-#'  saveMarkerModels(ploidy=4, data=fitPoly_data$ploidy4$dat4x,
+#'  fitMarkers(ploidy=4, data=fitPoly_data$ploidy4$dat4x,
 #'                   population=fitPoly_data$ploidy4$pop4x,
 #'                   pop.parents=fitPoly_data$ploidy4$pop.par4x,
 #'                   parentalPriors=fitPoly_data$ploidy4$parPriors4x,
@@ -348,14 +338,14 @@ getBatchsize <- function(mrkcount, ncores) {
 #'                   plot="fitted")
 #'
 #'  # hexaploid, no populations or prior information
-#'  saveMarkerModels(ploidy=6, data=fitPoly_data$ploidy6$dat6x,
+#'  fitMarkers(ploidy=6, data=fitPoly_data$ploidy6$dat6x,
 #'                   filePrefix=paste0(tempdir(),"/6xA"),
 #'                   allModelsFile=TRUE,
 #'                   plot="fitted")
 #'
 #'  # hexaploid, with specified populations, prior dosages of parents and other samples
 #'  # and prior means of the mixture components
-#'  saveMarkerModels(ploidy=6, data=fitPoly_data$ploidy6$dat6x,
+#'  fitMarkers(ploidy=6, data=fitPoly_data$ploidy6$dat6x,
 #'                   population=fitPoly_data$ploidy6$pop6x,
 #'                   pop.parents=fitPoly_data$ploidy6$pop.par6x,
 #'                   startmeans=fitPoly_data$ploidy6$startmeans6x,
@@ -366,7 +356,7 @@ getBatchsize <- function(mrkcount, ncores) {
 #' }
 #'
 #'@export
-saveMarkerModels <- function(
+fitMarkers <- function(
   ploidy,
   markers=NA, #not NULL
   data, diplo=NULL,
@@ -377,7 +367,7 @@ saveMarkerModels <- function(
   samplePriors=NULL,
   startmeans=NULL,
   maxiter=40, maxn.bin=200, nbin=200,
-  sd.threshold=0.1, p.threshold=0.99,
+  sd.threshold=0.1, p.threshold=0.9,
   call.threshold=0.6, peak.threshold=0.85,
   try.HW=TRUE, dip.filter=1,
   sd.target=NA, #not NULL
@@ -402,7 +392,7 @@ saveMarkerModels <- function(
   if (!(class(ploidy)[1] %in% c("numeric", "integer")) ||
       length(ploidy) != 1 ||
       ploidy < 2) {
-    stop("saveMarkerModels: ploidy must be  >= 2")
+    stop("fitMarkers: ploidy must be  >= 2")
   }
 
   # check (diplo)data and select
@@ -428,14 +418,14 @@ saveMarkerModels <- function(
                                     try.HW=try.HW,
                                     ploidy=ploidy)
   if (is.character(origpopstruct))
-    stop(paste("saveMarkerModels: invalid population structure:", origpopstruct))
+    stop(paste("fitMarkers: invalid population structure:", origpopstruct))
 
   if (!is.null(startmeans) && !is1NA(startmeans)) checkStartmeans(ploidy, startmeans)
   if (!is.null(samplePriors) && !is1NA(samplePriors))
     checkSamplePriors(ploidy, samplePriors, origpopstruct)
 
   if (!(dip.filter %in% 0:2))
-    stop("saveMarkerModels: dip.filter must be in 0:2")
+    stop("fitMarkers: dip.filter must be in 0:2")
 
   # arrange plotting output:
   plot <- checkPlot(plot, plot.type, plot.dir=NA, fpf) #plot.dir not NULL here!
@@ -450,10 +440,10 @@ saveMarkerModels <- function(
     if (is.character(markers)) {
       mrknrs <- match(markers, markernames)
       if (anyNA(mrknrs))
-        stop("saveMarkerModels: some marker names in markers don't occur in data")
+        stop("fitMarkers: some marker names in markers don't occur in data")
       markers <- mrknrs
     } else if (!all(markers %in% 1:length(markernames))) {
-      stop("saveMarkerModels: invalid markers")
+      stop("fitMarkers: invalid markers")
     }
   }
 
@@ -479,7 +469,7 @@ saveMarkerModels <- function(
   suppressPackageStartupMessages({ #suppress message from foreach
 
   #NOTE: if fitPoly is sourced instead of used as a package,
-  #library(foreach) is needed before calling saveMarkerModels.
+  #library(foreach) is needed before calling fitMarkers.
   #The reason is that %do% and %dopar% cannot be prefixed with 'foreach::'
 
   #There is a problem with foreach + doParallel under Windows, see
@@ -502,16 +492,16 @@ saveMarkerModels <- function(
   if (length(ncores) != 1 || is.na(ncores) || ncores < 2) ncores <- 1
   if (ncores > 1 && !requireNamespace("doParallel", quietly=TRUE)) {
     ncores <- 1
-    message("saveMarkerModels: package doParallel not available, using only 1 core")
+    message("fitMarkers: package doParallel not available, using only 1 core")
   }
   batchsize <- getBatchsize(length(markers), ncores)
-  message(paste("saveMarkerModels: batchsize =", batchsize))
+  message(paste("fitMarkers: batchsize =", batchsize))
   batchcount <- ceiling(length(markers) / batchsize)
   # batches give a speed increase because the selection of a subset of rows
   # from a large data frame takes very much longer than from a small data frame.
   # Also batches are efficiently parallellized.
   if (logfile != "") {
-    write (paste("saveMarkerModels started at", sMMnow), file=logfile)
+    write (paste("fitMarkers started at", sMMnow), file=logfile)
     write (paste("ploidy =", ploidy), file=logfile, append=TRUE)
     if ("data" %in% names(pars))
       write (paste("data frame passed as data =", pars$data), file=logfile, append=TRUE)
@@ -634,11 +624,40 @@ saveMarkerModels <- function(
                       pop.parents=origpopstruct$orig_pop.parents,
                       filePrefix=fpf)
   if (logfile != "")
-    write (paste("saveMarkerModels finished at",
+    write (paste("fitMarkers finished at",
                  format(Sys.time(), format='%Y%m%d-%H%M%S')), file=logfile,
            append=TRUE)
     invisible(NULL)
-} # saveMarkerModels
+} # fitMarkers
+
+
+#'@title DEPRECATED: Function to fit mixture models for series of markers and save the
+#'results to files
+#'
+#' @description This is the old name of the function `fitMarkers()`, the main function
+#' of `fitPoly`. It is kept only for backwards-compatibility. The only difference between
+#' the two is the default parameter of the genotyping probability threshold `p.threshold`, 
+#' it is 0.99 in `saveMarkerModels()` (as was originally set) and it is 0.9 in the current
+#' `fitMarkers()`. 
+#' 
+#' @param ... All parameters allowed in the function `fitMarkers()`. For a full description
+#' see the help of that function.
+#' @param p.threshold The minimum P-value required to assign a genotype (dosage)
+#'to a sample; default 0.99 (very stringent). If the P-value for all possible genotypes is less
+#'than p.threshold the sample is assigned genotype NA. Set to 1 to disable
+#'this filter.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+saveMarkerModels <- function(..., p.threshold = 0.99){
+  
+  warning("saveMarkerModels() has been deprecated in favour of fitMarkers().\nBe aware that default p.threshold of 0.99 is considered too stringent.")
+  
+  #Just here for backwards compatibility
+  fitMarkers(p.threshold = p.threshold, ...)
+}
 
 processBatch <- function(
   batch, batchsize, batchcount,
@@ -661,7 +680,7 @@ processBatch <- function(
   savelog, savediplo, saveallmodels,
   filePrefix,
   sMMnow, sMMinfo) {
-  #the processing of one batch in the foreach loop in saveMarkerModels
+  #the processing of one batch in the foreach loop in fitMarkers
   #print(paste("batch =",batch,"; start_mem =",pryr::mem_used()))
   minmrkix <- (batch - 1) * batchsize + 1
   maxmrkix <- min(batch * batchsize, length(markers))
@@ -963,7 +982,7 @@ savedata <- function(data, filename, append=FALSE) {
         commandexp <- parse(text=command)
         eval(commandexp)
         #this might go wrong if this function is called with data=data
-        #but that won't happen in saveMarkerModels
+        #but that won't happen in fitMarkers
       } else {
         #savedata was called with data=<values>;
         #the values are saved as an object with the name 'data':
@@ -1914,7 +1933,7 @@ getPriorCombinations <- function(priorCols, parPriors) {
 #'(if not). The poopulation IDs should match those in parameter population. If
 #'pop.parents is NULL all samples are considered to be in one population, and
 #'parameter population should also be NULL (default).
-# Alternative, in case fitOneMarker is called from saveMarkerModels:
+# Alternative, in case fitOneMarker is called from fitMarkers:
 # a matrix with 2 columns and 1 row per population; the cells contain the row
 # numbers of the parental populations in case of an F1 and NA otherwise. The
 # rownames are the population ISd, and the rows must be sorted such that all
@@ -1925,7 +1944,7 @@ getPriorCombinations <- function(priorCols, parPriors) {
 #'the second column containing population IDs that match pop.parents. In both
 #'columns NA values are not allowed. Parameters pop.parents and population
 #'should both be NULL (default) or both be specified.
-# Alternative, in case fitOneMarker is called from saveMarkerModels and pop.parents
+# Alternative, in case fitOneMarker is called from fitMarkers and pop.parents
 # is a matrix: then the second column of population should contain integers
 # indexing the pop.parents rows.
 #'@param parentalPriors NULL or a data frame specifying the prior dosages for
@@ -2002,7 +2021,7 @@ getPriorCombinations <- function(priorCols, parPriors) {
 #'specified if plot is not "none". Set this to "" to save plot files
 #'in the current working directory.
 #'@param sMMinfo NULL (default), for internal use only. Prevents unneeded checking
-#'and recalculation of input parameters when called from saveMarkerModels.
+#'and recalculation of input parameters when called from fitMarkers.
 #'@details fitOneMarker fits a series of mixture models for the given marker by
 #'repeatedly calling CodomMarker and selects the optimal one. The initial
 #'models vary according to the values of try.HW, pop.parents,
@@ -2207,7 +2226,7 @@ getPriorCombinations <- function(priorCols, parPriors) {
 fitOneMarker <- function (
   ploidy,
   marker, #one integer (index to markernames) or one character string
-  #        or, if called from saveMarkerModels, a list with number and name
+  #        or, if called from fitMarkers, a list with number and name
   #        of one marker in data
   data, diplo=NULL,
   select=TRUE, diploselect=TRUE, # by default all samples of polyploids and diploids selected
@@ -2244,7 +2263,7 @@ fitOneMarker <- function (
   diplonames <- NULL
 
   if (is.null(sMMinfo)) {
-    #not called from saveMarkerModels, check input
+    #not called from fitMarkers, check input
 
     if (!(class(ploidy) %in% c("numeric", "integer")) ||
         length(ploidy) != 1 ||
@@ -2307,7 +2326,7 @@ fitOneMarker <- function (
 
     # end if (!is.list(sMMinfo))
   } else {
-    # called from saveMarkerModels
+    # called from fitMarkers
     markernames <- sMMinfo$markernames
     markername <- markernames[marker]
     samplenames <- sMMinfo$samplenames
@@ -4260,9 +4279,9 @@ checkPlotType <- function(plot.type) {
 } #checkPlotType
 
 checkPlot <- function(plot, plot.type, plot.dir, filePrefix) {
-  #for use in saveMarkerModels and fitOneMarker
+  #for use in fitMarkers and fitOneMarker
   #plot, plot.type and plot.dir are parameters of one of those
-  #logfile is the (valid, checked) logfile specified in saveMarkerModels, or ""
+  #logfile is the (valid, checked) logfile specified in fitMarkers, or ""
   #plot can be "none", "fitted", "all"
   #plot.type can be "png", "emf", "svg", "pdf"
   #plot.dir can be NULL, "" or an absolute or relative path;
@@ -5030,7 +5049,7 @@ getModelFromFile <- function(marker, modeldata) {
   #Created for debugging, may be exported in the future
   #marker: vector of marker numbers or names occurring in modeldata
   #modeldata: either the modeldata data.frame returned by fitOneMarker,
-  #     or the modelfile returned by saveMarkerModels (RData or text file)
+  #     or the modelfile returned by fitMarkers (RData or text file)
   #Value:
   #A list with for each marker one element (named according to marker).
   #Each of these elements is a list with 3 elements:
@@ -5055,7 +5074,7 @@ getModelFromFile <- function(marker, modeldata) {
       names(modeldata)[1] != "marker" ||
       length(unique(modeldata$marker)) != nrow(modeldata))
     stop("getModelFromFile: modeldata should be the modeldata from fitOneMarker ",
-         "or the modelfile from saveMarkerModels")
+         "or the modelfile from fitMarkers")
   mucol <- which(names(modeldata) == "mutrans0")
   sdcol <- which(names(modeldata) == "sdtrans0")
   ng <- sdcol - mucol

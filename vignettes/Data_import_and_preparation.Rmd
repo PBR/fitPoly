@@ -269,11 +269,11 @@ For more information on `makeFitPoly` files see the help.
 ## Excersise 4: run fitPoly
 
 This vignette is about preparing and selecting data for dosage scoring
-by using the function `saveMarkerModels`. We assume that data.frame
-`dat.sel` from the previous exercise is still in memory.
+by using the function `fitMarkers`. We assume that data.frame `dat.sel`
+from the previous exercise is still in memory.
 
 ```{r eval=FALSE}
-saveMarkerModels(ploidy=4, markers=1:3, data=dat.sel, filePrefix="A", rdaFiles=TRUE)
+fitMarkers(ploidy=4, markers=1:3, data=dat.sel, filePrefix="A", rdaFiles=TRUE)
 ```
 
 The main result of this function call is a file `A_scores.RData` which

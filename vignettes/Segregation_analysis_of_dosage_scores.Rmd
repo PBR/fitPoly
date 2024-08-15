@@ -48,8 +48,8 @@ data(scores)
 
 ## Exercise 1: Segregation types and quality
 
-Function `saveMarkerModels` in package `fitPoly` returns (a.o.) a file
-with dosage scores for all markers where a model could be fitted. These
+Function `fitMarkers` in package `fitPoly` returns (a.o.) a file with
+dosage scores for all markers where a model could be fitted. These
 `data` are in data.frame scores. , of which we show a part:
 
 ```{r echo=FALSE}
