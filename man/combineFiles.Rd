@@ -11,7 +11,7 @@ combineFiles(XYdata, scores, controls=character(0))
 SampleName, X, Y (if present, R and ratio are also copied)}
 
 \item{scores}{data.frame with scores produced by the
-saveMarkerModels function of package fitPoly. It has columns MarkerName
+fitMarkers function of package fitPoly. It has columns MarkerName
 and SampleName that are subsets of MarkerName and SampleName in the XYdata,
 and at least a column geno}
 

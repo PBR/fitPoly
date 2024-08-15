@@ -8,7 +8,7 @@ bi-allelic marker}
 fitOneMarker(ploidy, marker, data, diplo=NULL, select=TRUE,
 diploselect=TRUE, pop.parents=NULL, population=NULL, parentalPriors=NULL,
 samplePriors=NULL, startmeans=NULL, maxiter=40, maxn.bin=200, nbin=200,
-sd.threshold=0.1, p.threshold=0.99, call.threshold=0.6, peak.threshold=0.85,
+sd.threshold=0.1, p.threshold=0.9, call.threshold=0.6, peak.threshold=0.85,
 try.HW=TRUE, dip.filter=1, sd.target=NA,
 plot="none", plot.type="png", plot.dir, sMMinfo=NULL)
 }
@@ -142,7 +142,7 @@ specified if plot is not "none". Set this to "" to save plot files
 in the current working directory.}
 
 \item{sMMinfo}{NULL (default), for internal use only. Prevents unneeded checking
-and recalculation of input parameters when called from saveMarkerModels.}
+and recalculation of input parameters when called from fitMarkers.}
 }
 \value{
 A list with components:

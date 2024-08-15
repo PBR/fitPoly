@@ -13,7 +13,7 @@ shiftParents=parentsScoredWithF1, showAll=FALSE, append_shf=FALSE)
 }
 \arguments{
 \item{scores}{A data frame as read from the scores file produced by function
-saveMarkerModels of package fitPoly (or a subset with at least columns
+fitMarkers of package fitPoly (or a subset with at least columns
 MarkerName, SampleName and geno), or a data frame as returned by function
 scores2wide. In the first case (default) parameter scores_long must be TRUE,
 in the second case it must be FALSE.}
@@ -200,7 +200,7 @@ In case the parents are not scored together with the F1 (e.g. if the F1 is
 triploid and the parents are diploid and tetraploid) the scores data frame
 should be edited to contain the parental as well as the F1 scores.
 In case the diploid and tetraploid parent are scored in the same run of
-function saveMarkerModels (package fitPoly)
+function fitMarkers (package fitPoly)
 the diploid is initially scored as nulliplex-duplex-quadruplex (dosage 0, 2
 or 4); that must be converted to the true diploid dosage scores (0, 1 or 2).
 Similar corrections are needed with other combinations, such as a diploid

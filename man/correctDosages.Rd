@@ -12,7 +12,7 @@ absent.threshold=0.04, outfile=NA)
 \item{chk}{data frame returned by function checkF1 when called without
 shiftmarkers}
 
-\item{scores}{data.frame with scores as produced by the saveMarkerModels
+\item{scores}{data.frame with scores as produced by the fitMarkers
 function of package fitPoly; at least columns MarkerName, SampleName and geno
 must be present, any other columns are ignored}
 

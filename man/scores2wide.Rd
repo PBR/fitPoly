@@ -23,7 +23,7 @@ names, and one row per marker. Marker is the sequential number of the marker
 as reported in the scores data frame.
 }
 \description{
-The saveMarkerModels function of package fitPoly returns a
+The fitMarkers function of package fitPoly returns a
 scores file in "long" format: one row for each MarkerName / SampleName
 combination. This function creates a file in "wide" format (samples in
 columns, markers in rows) containing the data from the geno column of the

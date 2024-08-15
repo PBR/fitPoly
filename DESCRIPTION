@@ -21,6 +21,7 @@ License: GPL-2
 Depends: R (>= 3.2.0)
 Imports: foreach, devEMF, doParallel, grDevices
 Suggests: knitr, rmarkdown
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 VignetteBuilder: knitr
 NeedsCompilation: no
+Encoding: UTF-8

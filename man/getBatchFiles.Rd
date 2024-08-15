@@ -7,7 +7,7 @@
 getBatchFiles(filePrefix, set)
 }
 \arguments{
-\item{filePrefix}{the same filePrefix as used in the saveMarkerModels call}
+\item{filePrefix}{the same filePrefix as used in the fitMarkers call}
 
 \item{set}{one of "models" or "scores"}
 }
@@ -16,5 +16,5 @@ a vector of batch file names, either the scores set or the models set
 }
 \description{
 This function gets the names of all batch files already produced
-by saveMarkerModels; used to recover data after a crash.
+by fitMarkers; used to recover data after a crash.
 }

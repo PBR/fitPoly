@@ -30,7 +30,7 @@ P and Q suffixes (or alternatives as specified by probe.suffix) are
 required to distinguish the two probes.}
 
 \item{scores}{data frame as read from the scores file produced by function
-saveMarkerModels of package fitPoly, with at least columns MarkerName,
+fitMarkers of package fitPoly, with at least columns MarkerName,
 SampleName, P0 .. P<ploidyF1> and geno (where <ploidyF1> is the ploidy of the
 F1, i.e. the average of parental ploidy and ploidy2).\cr
 If the F1 parents are scored separately, their rows should be added to the

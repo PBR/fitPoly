@@ -8,14 +8,14 @@
 data(scores)
 }
 \description{
-A data frame as saved by function saveMarkerModels in package
+A data frame as saved by function fitMarkers in package
 fitPoly
 }
 \details{
 scores contains the following columns:
 \itemize{
  \item marker: numeric, the sequential number of the markers in the
- saveMarkerModels input file
+ fitMarkers input file
  \item MarkerName: factor, names of the markers (SNPs)
  \item SampleName: factor names of the individuals / DNA samples
  \item ratio: numeric, the ratios of the Y signal to the total signal

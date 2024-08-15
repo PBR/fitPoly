@@ -11,7 +11,7 @@ qall_threshold=0, ploidy, ploidy2, scores_long=TRUE)
 \item{chk}{a data frame as returned by checkF1}
 
 \item{scores}{A data frame as read from the scores file produced by function
-saveMarkerModels of package fitPoly (or a subset with at least columns
+fitMarkers of package fitPoly (or a subset with at least columns
 MarkerName, SampleName and geno), or a data frame as returned by function
 scores2wide. In the first case (default) parameter scores_long must be TRUE,
 in the second case it must be FALSE.}

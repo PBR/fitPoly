@@ -14,15 +14,15 @@ a list with the concatenated elements: character vectors and/or
 data.frames
 }
 \description{
-Get the data saved by saveMarkerModels in batch files before it
-crashed and construct the log, models and score files just as saveMarkerModels
+Get the data saved by fitMarkers in batch files before it
+crashed and construct the log, models and score files just as fitMarkers
 would have done
 }
 \details{
 all batch files are assumed to contain a list with the same number
 of element, each either a character vector or a data.frame. This function
 concatenates the elements across the batch files.\cr
-This may be useful if saveMarkerModels has already been running a long time
+This may be useful if fitMarkers has already been running a long time
 and then crashed. The partial (or perhaps complete) data can then be
 recovered from the saved batch files, so that only the remaining markers
 (if any) need to be processed afterwards.

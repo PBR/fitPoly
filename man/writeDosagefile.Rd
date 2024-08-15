@@ -13,7 +13,7 @@ ploidy, ploidy2, shiftParents, scorefile)
 \item{chk}{data frame as returned by checkF1}
 
 \item{scores}{data frame as read from the scores file produced by function
-saveMarkerModels of package fitPoly (or a subset with at least columns
+fitMarkers of package fitPoly (or a subset with at least columns
 MarkerName, SampleName and geno)}
 
 \item{parent1}{character vector with the sample names of parent 1}

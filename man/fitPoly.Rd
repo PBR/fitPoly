@@ -2,6 +2,7 @@
 % Please edit documentation in R/fitPoly.r
 \docType{package}
 \name{fitPoly}
+\alias{fitPoly-package}
 \alias{fitPoly}
 \title{fitPoly: a package for assigning dosage scores based on SNP array data}
 \description{

@@ -147,7 +147,7 @@ getBatchsize <- function(mrkcount, ncores) {
 #'@usage fitMarkers(ploidy, markers=NA, data, diplo=NULL, select=TRUE,
 #'diploselect=TRUE, pop.parents=NULL, population=NULL, parentalPriors=NULL,
 #'samplePriors=NULL, startmeans=NULL, maxiter=40, maxn.bin=200, nbin=200,
-#'sd.threshold=0.1, p.threshold=0.99, call.threshold=0.6, peak.threshold=0.85,
+#'sd.threshold=0.1, p.threshold=0.9, call.threshold=0.6, peak.threshold=0.85,
 #'try.HW=TRUE, dip.filter=1, sd.target=NA,
 #'filePrefix, rdaFiles=FALSE, allModelsFile=FALSE,
 #'plot="none", plot.type="png", ncores=1)
@@ -647,10 +647,9 @@ fitMarkers <- function(
 #'than p.threshold the sample is assigned genotype NA. Set to 1 to disable
 #'this filter.
 #'
-#' @return
+#' @return See `fitMarkers()` documentation for a full description.
 #' @export
 #'
-#' @examples
 saveMarkerModels <- function(..., p.threshold = 0.99){
   
   warning("saveMarkerModels() has been deprecated in favour of fitMarkers().\nBe aware that default p.threshold of 0.99 is considered too stringent.")
@@ -1904,7 +1903,7 @@ getPriorCombinations <- function(priorCols, parPriors) {
 #'@usage fitOneMarker(ploidy, marker, data, diplo=NULL, select=TRUE,
 #'diploselect=TRUE, pop.parents=NULL, population=NULL, parentalPriors=NULL,
 #'samplePriors=NULL, startmeans=NULL, maxiter=40, maxn.bin=200, nbin=200,
-#'sd.threshold=0.1, p.threshold=0.99, call.threshold=0.6, peak.threshold=0.85,
+#'sd.threshold=0.1, p.threshold=0.9, call.threshold=0.6, peak.threshold=0.85,
 #'try.HW=TRUE, dip.filter=1, sd.target=NA,
 #'plot="none", plot.type="png", plot.dir, sMMinfo=NULL)
 #'
@@ -2236,7 +2235,7 @@ fitOneMarker <- function (
   samplePriors=NULL,
   startmeans=NULL,
   maxiter=40, maxn.bin=200, nbin=200,
-  sd.threshold=0.1, p.threshold=0.99,
+  sd.threshold=0.1, p.threshold=0.9,
   call.threshold=0.6, peak.threshold=0.85,
   try.HW=TRUE, dip.filter=1,
   sd.target=NA, #not NULL

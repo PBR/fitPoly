@@ -2,254 +2,27 @@
 % Please edit documentation in R/fitPoly.r
 \name{saveMarkerModels}
 \alias{saveMarkerModels}
-\title{Function to fit mixture models for series of markers and save the
+\title{DEPRECATED: Function to fit mixture models for series of markers and save the
 results to files}
 \usage{
-saveMarkerModels(ploidy, markers=NA, data, diplo=NULL, select=TRUE,
-diploselect=TRUE, pop.parents=NULL, population=NULL, parentalPriors=NULL,
-samplePriors=NULL, startmeans=NULL, maxiter=40, maxn.bin=200, nbin=200,
-sd.threshold=0.1, p.threshold=0.99, call.threshold=0.6, peak.threshold=0.85,
-try.HW=TRUE, dip.filter=1, sd.target=NA,
-filePrefix, rdaFiles=FALSE, allModelsFile=FALSE,
-plot="none", plot.type="png", ncores=1)
+saveMarkerModels(..., p.threshold = 0.99)
 }
 \arguments{
-\item{ploidy}{The ploidy level, 2 or higher: 2 for diploids, 3 for triploids
-etc.}
-
-\item{markers}{NA or a character or numeric vector specifying the markers to be
-fitted. If a character vector, names should match the MarkerName column of
-data; if numeric, the numbers index the markers based on the alphabetic order
-of the MarkerNames in data.}
-
-\item{data}{A data frame with the polyploid samples, with (at least) columns
-MarkerName, SampleName and ratio, where ratio is the Y-allele signal
-divided by the sum of the X- and Y-allele signals: ratio == Y/(X+Y)}
-
-\item{diplo}{NULL or a data frame like data, with the diploid samples and (a subset
-of) the same markers as in data. Genotypic scores for diploid samples are
-calculated according to the best-fitting model calculated for the polyploid
-samples and therefore may range from 0 (nulliplex) to <ploidy>, with the
-expected dosages 0 and <ploidy> for the homozygotes and <ploidy/2> for the
-heterozygotes.\cr
-diplo can also be used for any other samples that need to be
-scored, but that should not affect the fitted models.}
-
-\item{select}{A logical vector, recycled if shorter than nrow(data):
-indicates which rows of data are to be used (default TRUE, i.e. keep all rows)}
-
-\item{diploselect}{A logical vector like select, matching diplo instead of data}
-
-\item{pop.parents}{NULL or a data.frame specifying the population structure. The
-data frame has 3 columns: the first containing population ID's, the 2nd and 3rd
-with the population ID's of the parents of these populations (if F1's) or NA
-(if not). The population ID's should match those in parameter population. If
-pop.parents is NULL all samples are considered to be in one population, and
-parameter population should be NULL (default).}
-
-\item{population}{NULL or a data.frame specifying to which population each
-sample belongs. The data frame has two columns, the first containing
-the SampleName (containing all SampleNames occurring in data),
-the second column containing population ID's that match pop.parents. In both
-columns NA values are not allowed. Parameters pop.parents and population
-should both be NULL (default) or both be specified.}
-
-\item{parentalPriors}{NULL or a data frame specifying the prior dosages for
-the parental populations. The data frame has one column MarkerName
-followed by one column for each F1 parental population. Column names (except
-first) are population ID's matching the parental populations in pop.parents.
-In case there is just one F1 population in pop.parents, it is possible to
-have two columns for both parental populations instead of one (allowing two
-specify two different prior dosages); in that case both columns for each
-parent have the same caption. Each row specifies the priors for
-one marker. The contents of the data frame are dosages, as integers from 0
-to <ploidy>; NA values are allowed.\cr
-Note: when reading the data frame with read.table or read.csv, set
-check.names=FALSE so column names (population ID's) are not changed.}
-
-\item{samplePriors}{NULL or a data.frame specifying prior dosages for individual
-samples. The first column called MarkerName is followed by one column per
-sample; not all samples in data need to have a column here, only
-those samples for which prior dosages for one or more markers are available.
-Each row specifies the priors for one marker. The contents of the data frame
-are dosages, as integers from 0 to <ploidy>; NA values are allowed.\cr
-Note: when reading the data frame with read.table or read.csv, set
-check.names=FALSE so column names (population ID's) are not changed.}
-
-\item{startmeans}{NULL or a data.frame specifying the prior means of
-the mixture distributions. The data frame has one column MarkerName,
-followed by <ploidy+1> columns with the prior ratio means on the original
-(untransformed) scale. Each row specifies the
-means for one marker in strictly ascending order (all means NA is allowed, but
-markers without start means can also be omitted).}
-
-\item{maxiter}{A single integer, passed to CodomMarker, see there for explanation}
-
-\item{maxn.bin}{A single integer, passed to CodomMarker, see there for explanation}
-
-\item{nbin}{A single integer, passed to CodomMarker, see there for explanation}
-
-\item{sd.threshold}{The maximum value allowed for the (constant) standard
-deviation of each peak  on the arcsine - square root transformed scale,
-default 0.1. If the optimal model has a larger standard deviation the marker
-is rejected. Set to a large value (e.g. 1) to disable this filter.}
+\item{...}{All parameters allowed in the function `fitMarkers()`. For a full description
+see the help of that function.}
 
 \item{p.threshold}{The minimum P-value required to assign a genotype (dosage)
-to a sample; default 0.99. If the P-value for all possible genotypes is less
+to a sample; default 0.99 (very stringent). If the P-value for all possible genotypes is less
 than p.threshold the sample is assigned genotype NA. Set to 1 to disable
 this filter.}
-
-\item{call.threshold}{The minimum fraction of samples to have genotypes
-assigned ("called"); default 0.6. If under the optimal model the fraction of
-"called" samples is less than call.threshold the marker is rejected. Set to 0
-to disable this filter.}
-
-\item{peak.threshold}{The maximum allowed fraction of the scored samples that
-are in one peak; default 0.85. If any of the possible genotypes (peaks in the
-ratio histogram) contains more than peak.threshold of the samples the marker
-is rejected (because the remaining samples offers too little information for
-reliable model fitting).}
-
-\item{try.HW}{Logical: if TRUE (default), try models with and without a
-constraint on the mixing proportions according to Hardy-Weinberg equilibrium
-ratios. If FALSE, only try models without this constraint. Even when the HW
-assumption is not applicable, setting try.HW to TRUE often still leads to
-a better model. For more details on how try.HW is used see the Details
-section of function fitOneMarker.}
-
-\item{dip.filter}{if 1 (default), select best model only from models
-that do not have a dip (a lower peak surrounded by higher peaks: these are not
-expected under Hardy-Weinberg equilibrium or in cross progenies). If all
-fitted models have a dip still the best of these is selected. If 2, similar,
-but if all fitted models have a dip the marker is rejected. If 0, select best
-model among all fitted models, including those with a dip.}
-
-\item{sd.target}{If the fitted standard deviation of the peaks on the
-transformed scale is larger than sd.target a penalty is given (see Details
-section of function fitOneMarker);
-default NA i.e. no penalty is given.}
-
-\item{filePrefix}{partial file name, possibly including an absolute or
-relative file path. filePrefix must always be specified.
-All output files will have filePrefix prefixed to their name so it is clear
-they are all derived from the same call to saveMarkerModels.
-If filePrefix includes a file path all output files
-will be saved there; if a filePrefix is specified that does not include a
-a path the output will be saved in the working directory.}
-
-\item{rdaFiles}{logical, default FALSE. The tabular output (scorefile,
-diploscorefile, modelfile, allmodelsfile) is saved as tab-separated text files
-with extension .dat or as an .RData file if this parameter is FALSE or TRUE
-respectively.}
-
-\item{allModelsFile}{logical, default FALSE. If TRUE an allmodelsfile is saved
-with all models that have been tried for each marker; also the log file will
-contain a few lines for each marker. This information is mostly useful
-for debugging and locating problems.}
-
-\item{plot}{String, "none" (default), "fitted" or "all". If "fitted" a plot
-of the best fitting model and the assigned genotypes is saved with filename
-<marker number><marker name>.<plot.type>, preceded by "rejected_" if the
-marker was rejected. If "all", small plots of all models are saved to files
-(8 per file) with filename
-<"plots"><marker number><marker name><pagenr>.<plot.type> in addition to the
-plot of the best fitting model.}
-
-\item{plot.type}{String, "png" (default), "emf", "svg" or "pdf". Indicates
-format for saving the plots.}
-
-\item{ncores}{The number of processor cores to use for parallel processing,
-default 1. Specifying more cores than available may cause problems.
-Note that the implementation under Windows involves duplicating the input data
-(under Linux that does not happen, nor under Windows if ncores=1), so if
-under Windows memory size is a problem it would be better to run several
-R instances simultaneously, each with ncores=1, each processing part of the
-data.}
 }
 \value{
-NULL. The result of saveMarkerModels is a set of output files.
+See `fitMarkers()` documentation for a full description.
 }
 \description{
-This is the main function that calls fitOneMarker
-for a series of markers and saves the tabular, graphical and log output to
-files. Most of the arguments are identical to those of fitOneMarker and
-are directly passed through.
-}
-\details{
-saveMarkerModels calls fitOneMarker for all markers specified by
-parameter markers. The markers are processed in batches; the number of markers
-per batch is printed to the console when saveMarkerModels is started. If
-multiple cores are used the batches are processed in parallel.\cr
-During the processing a series of RData files (2 for each batch) is saved in the
-directory specified in filePrefix. At the end these are combined into the required
-output files and then deleted.
-If something goes wrong at any stage, the files for the completed batches are
-still available and can be combined manually, avoiding the need to re-run the
-process for the completed batches.
-The output files consist of:
-\itemize{
-\item{<filePrefix>.log: a logfile containing several lines listing the
-input parameters. If parameter allModelsFile is TRUE the logfile also
-contains several text lines per marker, corresponding to component "log"
-in the result of fitOneMarker}
-\item{<filePrefix>_scores.dat (or .RData) a file containing one line per
-polyploid sample for every marker that could be fitted, corresponding to
-component "scores" in the result of fitOneMarker}
-\item{<filePrefix>_diploscores.dat (or .RData) a file containing one line per
-diploid sample for every marker that could be fitted, corresponding to
-component "diploscores" in the result of fitOneMarker. This file is only produced
-if parameter diplo is not missing}
-\item{<filePrefix>_models.dat (or .RData) a file containing one line per
-marker, corresponding to component "modeldata" in the result of fitOneMarker: the
-selected model for each marker, with several statistics}
-\item{<filePrefix>_allmodels.dat (or .RData) as the models file, but
-containing all models fitted for each marker, not only the selected model,
-marker, corresponding to component "allmodeldata" in the result of fitOneMarker.
-This file is only produced if parameter allModelsFile is TRUE}
-}
-Additionally, if plot != "none", plot files are generated in directory
-<filePrefix>_plots
-}
-\examples{
-\donttest{
- # These examples run for a total of about 55 sec.
- # All output files are saved in tempdir() and subdirectories of it.
-
- data(fitPoly_data)
-
- # tetraploid, with no populations and with sample prior dosages
- saveMarkerModels(ploidy=4, data=fitPoly_data$ploidy4$dat4x,
-                  samplePriors=fitPoly_data$ploidy4$sampPriors4x,
-                  filePrefix=paste0(tempdir(),"/4xA"),
-                  allModelsFile=TRUE,
-                  plot="fitted")
-
- # tetraploid, with specified populations and parental and sample prior dosages
- saveMarkerModels(ploidy=4, data=fitPoly_data$ploidy4$dat4x,
-                  population=fitPoly_data$ploidy4$pop4x,
-                  pop.parents=fitPoly_data$ploidy4$pop.par4x,
-                  parentalPriors=fitPoly_data$ploidy4$parPriors4x,
-                  samplePriors=fitPoly_data$ploidy4$sampPriors4x,
-                  filePrefix=paste0(tempdir(),"/4xB"),
-                  allModelsFile=TRUE,
-                  plot="fitted")
-
- # hexaploid, no populations or prior information
- saveMarkerModels(ploidy=6, data=fitPoly_data$ploidy6$dat6x,
-                  filePrefix=paste0(tempdir(),"/6xA"),
-                  allModelsFile=TRUE,
-                  plot="fitted")
-
- # hexaploid, with specified populations, prior dosages of parents and other samples
- # and prior means of the mixture components
- saveMarkerModels(ploidy=6, data=fitPoly_data$ploidy6$dat6x,
-                  population=fitPoly_data$ploidy6$pop6x,
-                  pop.parents=fitPoly_data$ploidy6$pop.par6x,
-                  startmeans=fitPoly_data$ploidy6$startmeans6x,
-                  parentalPriors=fitPoly_data$ploidy6$parPriors6x,
-                  samplePriors=fitPoly_data$ploidy6$sampPriors6x,
-                  filePrefix=paste0(tempdir(),"/6xB"),
-                  plot="fitted")
-}
-
+This is the old name of the function `fitMarkers()`, the main function
+of `fitPoly`. It is kept only for backwards-compatibility. The only difference between
+the two is the default parameter of the genotyping probability threshold `p.threshold`, 
+it is 0.99 in `saveMarkerModels()` (as was originally set) and it is 0.9 in the current
+`fitMarkers()`.
 }
