@@ -3,7 +3,7 @@ Type: Package
 Title: Genotype Calling for Bi-Allelic Marker Assays
 Version: 4.0.0
 Date: 2024-03-15
-Author: Roeland E. Voorrips and Gerrit Gort
+Author: Roeland E. Voorrips, Gerrit Gort, Alejandro Therese Navarro
 Maintainer: Alejandro Therese Navarro <alejandro.theresenavarro@wur.nl>
 Description: Genotyping assays for bi-allelic markers (e.g. SNPs) produce
 	signal intensities for the two alleles. 'fitPoly' assigns genotypes 
